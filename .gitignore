@@ -1,0 +1,61 @@
+# Исключаем старый сайт и документацию (нужны только для разработки)
+docs/
+
+# Переменные окружения
+.env
+.env.local
+.env.production
+
+# Данные Docker
+data/
+docker/nginx/logs/
+docker/ssl/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next/
+out/
+build/
+
+# Prisma
+prisma/migrations/
+
+# Логи
+*.log
+logs/
+
+# Временные файлы
+*.tmp
+*.temp
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Резервные копии
+*.bak
+*.backup
+
+# Тестовые данные
+test-data/
+mock-data/
+
+# Сертификаты
+*.pem
+*.key
+*.crt
+
+# Локальные настройки разработки
+.local/
