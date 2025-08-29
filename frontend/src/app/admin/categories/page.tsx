@@ -379,7 +379,7 @@ export default function AdminCategoriesPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(category as any)._count?.news || 0}
+                        {(category as unknown as { _count?: { news: number } })._count?.news || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button

@@ -1,4 +1,58 @@
-import { Department, Employee } from './types';
+import { Department, Employee, News } from './types';
+
+// Mock News Data
+export const mockNews: News[] = [
+  {
+    id: '1',
+    titleRu: 'Запуск новой программы поддержки малого и среднего бизнеса',
+    titleEn: 'Launch of new small and medium business support program',
+    contentRu: 'Департамент экономического развития Брянской области объявляет о запуске новой программы поддержки малого и среднего предпринимательства...',
+    contentEn: 'The Department of Economic Development of Bryansk Region announces the launch of a new program to support small and medium enterprises...',
+    excerptRu: 'Новая программа предоставит льготное кредитование и субсидии для начинающих предпринимателей',
+    published: true,
+    publishedAt: '2024-08-25T10:00:00Z',
+    views: 1250,
+    createdAt: '2024-08-25T09:00:00Z',
+    updatedAt: '2024-08-25T09:00:00Z',
+    author: {
+      id: '1',
+      name: 'Администратор'
+    },
+    commentsCount: 5
+  },
+  {
+    id: '2',
+    titleRu: 'Итоги инвестиционного форума "Брянщина 2024"',
+    contentRu: 'В Брянске прошел крупнейший инвестиционный форум региона, где были представлены новые проекты развития области...',
+    excerptRu: 'На форуме было подписано соглашений на общую сумму более 15 миллиардов рублей',
+    published: true,
+    publishedAt: '2024-08-23T14:30:00Z',
+    views: 850,
+    createdAt: '2024-08-23T13:00:00Z',
+    updatedAt: '2024-08-23T13:00:00Z',
+    author: {
+      id: '1',
+      name: 'Администратор'
+    },
+    commentsCount: 12
+  },
+  {
+    id: '3',
+    titleRu: 'Цифровизация экономики: новые возможности для бизнеса',
+    contentRu: 'Региональная программа цифровизации экономики открывает новые горизонты для развития IT-сферы в Брянской области...',
+    excerptRu: 'Запущены меры поддержки IT-стартапов и внедрения цифровых технологий',
+    published: true,
+    publishedAt: '2024-08-20T11:15:00Z',
+    views: 670,
+    createdAt: '2024-08-20T10:00:00Z',
+    updatedAt: '2024-08-20T10:00:00Z',
+    author: {
+      id: '1',
+      name: 'Администратор'
+    },
+    commentsCount: 8
+  }
+];
 
 // Mock Departments Data
 export const mockDepartments: Department[] = [

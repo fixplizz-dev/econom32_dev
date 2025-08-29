@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi, commentsApi } from '@/lib/api';
 import { User, Comment } from '@/lib/types';
@@ -14,6 +14,19 @@ export default function AdminCommentsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const router = useRouter();
+
+  const fetchComments = useCallback(async () => {
+    try {
+      const params: Record<string, string | number> = { page: currentPage, limit: 20 };
+      if (statusFilter) params.status = statusFilter;
+
+      const response = await commentsApi.getAll(params);
+      setComments(response.data.comments || []);
+      setTotalPages(response.data.pagination?.pages || 1);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  }, [currentPage, statusFilter]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -44,26 +57,13 @@ export default function AdminCommentsPage() {
     };
 
     checkAuth();
-  }, [router]);
-
-  const fetchComments = async () => {
-    try {
-      const params: any = { page: currentPage, limit: 20 };
-      if (statusFilter) params.status = statusFilter;
-
-      const response = await commentsApi.getAll(params);
-      setComments(response.data.comments || []);
-      setTotalPages(response.data.pagination?.pages || 1);
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-    }
-  };
+  }, [router, fetchComments]);
 
   useEffect(() => {
     if (user) {
       fetchComments();
     }
-  }, [currentPage, statusFilter, user]);
+  }, [fetchComments, user]);
 
   const handleModerate = async (commentId: string, status: 'APPROVED' | 'REJECTED') => {
     try {
@@ -151,6 +151,7 @@ export default function AdminCommentsPage() {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
+                aria-label="Фильтр по статусу комментариев"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Все комментарии</option>
@@ -199,7 +200,7 @@ export default function AdminCommentsPage() {
                           className="text-blue-600 hover:text-blue-800"
                           target="_blank"
                         >
-                          {(comment as any).news?.titleRu || 'Неизвестная новость'}
+                          {(comment as unknown as { news?: { titleRu: string } }).news?.titleRu || 'Неизвестная новость'}
                         </Link>
                       </div>
                       
@@ -207,11 +208,11 @@ export default function AdminCommentsPage() {
                         {new Date(comment.createdAt).toLocaleString('ru-RU')}
                       </div>
                       
-                      {comment.parentId && (comment as any).parent && (
+                      {comment.parentId && (comment as unknown as { parent?: { authorName: string; content: string } }).parent && (
                         <div className="bg-gray-50 p-3 rounded-md mb-3">
                           <div className="text-xs text-gray-500 mb-1">Ответ на комментарий:</div>
                           <div className="text-sm text-gray-700">
-                            <strong>{(comment as any).parent.authorName}:</strong> {(comment as any).parent.content.substring(0, 100)}...
+                            <strong>{(comment as unknown as { parent: { authorName: string; content: string } }).parent.authorName}:</strong> {(comment as unknown as { parent: { authorName: string; content: string } }).parent.content.substring(0, 100)}...
                           </div>
                         </div>
                       )}

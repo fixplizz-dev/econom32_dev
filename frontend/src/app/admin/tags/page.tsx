@@ -286,7 +286,7 @@ export default function AdminTagsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(tag as any)._count?.news || 0}
+                        {(tag as unknown as { _count?: { news: number } })._count?.news || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button

@@ -105,10 +105,10 @@ export function ImageOptimizer({ fileId, onOptimized }: ImageOptimizerProps) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const calculateSavings = (originalSize: number, optimizedSize: number): string => {
-    const savings = ((originalSize - optimizedSize) / originalSize) * 100;
-    return savings > 0 ? `${savings.toFixed(1)}%` : '0%';
-  };
+  // const calculateSavings = (originalSize: number, optimizedSize: number): string => {
+  //   const savings = ((originalSize - optimizedSize) / originalSize) * 100;
+  //   return savings > 0 ? `${savings.toFixed(1)}%` : '0%';
+  // };
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -248,7 +248,7 @@ export function ImageOptimizer({ fileId, onOptimized }: ImageOptimizerProps) {
 
       {!imageInfo && !loading && (
         <div className="text-center py-8 text-gray-500">
-          Нажмите "Получить информацию" для анализа изображения
+          Нажмите &quot;Получить информацию&quot; для анализа изображения
         </div>
       )}
     </div>
