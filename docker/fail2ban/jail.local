@@ -1,0 +1,94 @@
+[DEFAULT]
+# Базовые настройки fail2ban
+bantime = 3600
+findtime = 600
+maxretry = 5
+backend = auto
+usedns = warn
+logencoding = auto
+enabled = false
+mode = normal
+filter = %(__name__)s[mode=%(mode)s]
+
+# Настройки для Docker
+chain = DOCKER-USER
+banaction = iptables-multiport
+banaction_allports = iptables-allports
+
+[sshd]
+enabled = true
+port = ssh
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 1800
+
+[nginx-http-auth]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 3
+bantime = 3600
+
+[nginx-limit-req]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 10
+findtime = 600
+bantime = 7200
+
+[nginx-botsearch]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 86400
+
+[nginx-badbots]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 86400
+
+[nginx-noscript]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 6
+bantime = 86400
+
+[nginx-noproxy]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 86400
+
+[nginx-nohome]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 86400
+
+[nginx-nophp]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 86400
+
+[postfix]
+enabled = true
+port = smtp,465,submission
+logpath = /var/log/mail.log
+maxretry = 3
+bantime = 3600
+
+[postfix-sasl]
+enabled = true
+port = smtp,465,submission,imap,imaps,pop3,pop3s
+logpath = /var/log/mail.log
+maxretry = 3
+bantime = 3600

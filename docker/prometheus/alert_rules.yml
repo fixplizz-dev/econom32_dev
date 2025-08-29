@@ -1,0 +1,188 @@
+# Правила алертов для системы безопасности
+
+groups:
+  - name: security_alerts
+    rules:
+      # Высокое количество неудачных попыток входа
+      - alert: HighFailedLoginAttempts
+        expr: increase(failed_login_attempts_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Высокое количество неудачных попыток входа"
+          description: "Обнаружено {{ $value }} неудачных попыток входа за последние 5 минут"
+
+      # Подозрительная активность с одного IP
+      - alert: SuspiciousIPActivity
+        expr: rate(http_requests_total{status=~"4.."}[5m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Подозрительная активность с IP {{ $labels.ip }}"
+          description: "IP {{ $labels.ip }} генерирует {{ $value }} ошибок 4xx в секунду"
+
+      # Попытки SQL инъекций
+      - alert: SQLInjectionAttempt
+        expr: increase(sql_injection_attempts_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Обнаружена попытка SQL инъекции"
+          description: "Зафиксирована попытка SQL инъекции с IP {{ $labels.ip }}"
+
+      # Попытки XSS атак
+      - alert: XSSAttempt
+        expr: increase(xss_attempts_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Обнаружена попытка XSS атаки"
+          description: "Зафиксирована попытка XSS атаки с IP {{ $labels.ip }}"
+
+  - name: system_alerts
+    rules:
+      # Высокая загрузка CPU
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "Высокая загрузка CPU на {{ $labels.instance }}"
+          description: "Загрузка CPU составляет {{ $value }}%"
+
+      # Высокое использование памяти
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "Высокое использование памяти на {{ $labels.instance }}"
+          description: "Использование памяти составляет {{ $value }}%"
+
+      # Мало свободного места на диске
+      - alert: LowDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "Мало свободного места на диске {{ $labels.mountpoint }}"
+          description: "Использование диска составляет {{ $value }}%"
+
+  - name: application_alerts
+    rules:
+      # Приложение недоступно
+      - alert: ApplicationDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "Приложение {{ $labels.job }} недоступно"
+          description: "Приложение {{ $labels.job }} на {{ $labels.instance }} недоступно более 1 минуты"
+
+      # Высокое время ответа
+      - alert: HighResponseTime
+        expr: http_request_duration_seconds{quantile="0.95"} > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "Высокое время ответа для {{ $labels.job }}"
+          description: "95-й перцентиль времени ответа составляет {{ $value }} секунд"
+
+      # Высокий процент ошибок
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "Высокий процент ошибок 5xx"
+          description: "Процент ошибок 5xx составляет {{ $value }}%"
+
+  - name: database_alerts
+    rules:
+      # PostgreSQL недоступен
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "PostgreSQL недоступен"
+          description: "PostgreSQL база данных недоступна более 1 минуты"
+
+      # Высокое количество подключений к БД
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Высокое количество подключений к PostgreSQL"
+          description: "Использовано {{ $value }}% от максимального количества подключений"
+
+      # Медленные запросы
+      - alert: SlowQueries
+        expr: pg_stat_activity_max_tx_duration > 300
+        for: 2m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Обнаружены медленные запросы в PostgreSQL"
+          description: "Максимальная длительность транзакции составляет {{ $value }} секунд"
+
+  - name: security_services_alerts
+    rules:
+      # ClamAV недоступен
+      - alert: ClamAVDown
+        expr: up{job="clamav"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "ClamAV антивирус недоступен"
+          description: "Антивирусная служба ClamAV недоступна более 2 минут"
+
+      # Обнаружен вирус
+      - alert: VirusDetected
+        expr: increase(clamav_virus_detected_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Обнаружен вирус!"
+          description: "ClamAV обнаружил {{ $value }} зараженных файлов"
+
+      # Fail2ban заблокировал IP
+      - alert: IPBlocked
+        expr: increase(fail2ban_banned_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "IP адрес заблокирован Fail2ban"
+          description: "Fail2ban заблокировал {{ $value }} IP адресов за последние 5 минут"

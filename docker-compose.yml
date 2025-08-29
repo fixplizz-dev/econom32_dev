@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8' - устаревший параметр, удален для совместимости
 
 services:
   # PostgreSQL база данных
@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
     networks:
       - econom32_network
@@ -26,7 +26,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - ./data/redis:/data
     networks:
       - econom32_network
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - ./data/minio:/data
     networks:
       - econom32_network
     restart: unless-stopped
@@ -56,7 +56,7 @@ services:
     ports:
       - "3310:3310"
     volumes:
-      - clamav_data:/var/lib/clamav
+      - ./data/clamav:/var/lib/clamav
     networks:
       - econom32_network
     restart: unless-stopped
@@ -102,7 +102,7 @@ services:
       - "9090:9090"
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+      - ./data/prometheus:/prometheus
     networks:
       - econom32_network
     restart: unless-stopped
@@ -119,7 +119,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./data/grafana:/var/lib/grafana
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
     networks:
       - econom32_network
@@ -128,13 +128,78 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin123
       GF_USERS_ALLOW_SIGN_UP: "false"
 
-volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
-  clamav_data:
-  prometheus_data:
-  grafana_data:
+  # Fail2Ban для защиты от брутфорса
+  fail2ban:
+    build:
+      context: ./docker/fail2ban
+      dockerfile: Dockerfile
+    container_name: econom32_fail2ban
+    privileged: true
+    network_mode: host
+    volumes:
+      - ./docker/nginx/logs:/var/log/nginx:ro
+      - ./data/fail2ban:/var/log/fail2ban
+      - /var/log:/var/log:ro
+    restart: unless-stopped
+    depends_on:
+      - nginx
+
+  # cAdvisor для мониторинга Docker контейнеров
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: econom32_cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    networks:
+      - econom32_network
+    restart: unless-stopped
+
+  # Node Exporter для системных метрик
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: econom32_node_exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - econom32_network
+    restart: unless-stopped
+
+  # AlertManager для уведомлений
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: econom32_alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./docker/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./data/alertmanager:/alertmanager
+    networks:
+      - econom32_network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+
+# Все данные теперь хранятся в локальных папках ./data/
+# volumes: секция больше не нужна
 
 networks:
   econom32_network:

@@ -1,10 +1,10 @@
-# Makefile для управления локальным окружением разработки
+# Makefile для управления портативным окружением разработки
 
-.PHONY: help setup start stop restart logs clean reset
+.PHONY: help setup start stop restart logs clean reset backup restore
 
 # Показать справку
 help:
-	@echo "🚀 Команды для разработки econom32.ru"
+	@echo "🚀 Команды для разработки econom32.ru (портативная версия)"
 	@echo ""
 	@echo "  setup     - Первоначальная настройка окружения"
 	@echo "  start     - Запуск всех сервисов"
@@ -13,14 +13,20 @@ help:
 	@echo "  logs      - Просмотр логов всех сервисов"
 	@echo "  clean     - Остановка и удаление контейнеров"
 	@echo "  reset     - Полная очистка окружения"
+	@echo "  backup    - Создание резервной копии данных"
+	@echo "  restore   - Восстановление из резервной копии"
 	@echo "  db-shell  - Подключение к PostgreSQL"
 	@echo "  redis-cli - Подключение к Redis"
+	@echo "  size      - Показать размер данных"
 	@echo ""
 
 # Первоначальная настройка
 setup:
+	@echo "📁 Создание папок для данных..."
+	@mkdir -p data/{postgres,redis,minio,clamav,prometheus,grafana}
+	@mkdir -p docker/{ssl,nginx/logs}
 	@chmod +x scripts/*.sh
-	@./scripts/dev-setup.sh
+	@if [ -f scripts/dev-setup.sh ]; then ./scripts/dev-setup.sh; else echo "Запустите docker-compose up -d"; fi
 
 # Запуск сервисов
 start:
@@ -30,7 +36,7 @@ start:
 
 # Остановка сервисов
 stop:
-	@echo "🚫 Остановка сервисов..."
+	@echo "🛑 Остановка сервисов..."
 	@docker-compose down
 	@echo "✅ Сервисы остановлены"
 
@@ -67,33 +73,32 @@ redis-cli:
 status:
 	@docker-compose ps
 
+# Создание резервной копии
+backup:
+	@echo "💾 Создание резервной копии данных..."
+	@tar -czf backup-$(shell date +%Y%m%d-%H%M).tar.gz data/
+	@echo "✅ Резервная копия создана: backup-$(shell date +%Y%m%d-%H%M).tar.gz"
+
+# Восстановление из резервной копии
+restore:
+	@echo "⚠️  Восстановление удалит текущие данные!"
+	@read -p "Введите имя файла бэкапа: " backup && \
+	docker-compose down && \
+	rm -rf data/* && \
+	tar -xzf $$backup && \
+	docker-compose up -d
+	@echo "✅ Данные восстановлены"
+
+# Показать размер данных
+size:
+	@echo "📊 Размер данных по сервисам:"
+	@du -sh data/* 2>/dev/null || echo "Папка data пуста"
+	@echo ""
+	@echo "📊 Общий размер проекта:"
+	@du -sh . --exclude=node_modules
+
 # Обновление образов
 update:
 	@echo "🔄 Обновление Docker образов..."
 	@docker-compose pull
 	@echo "✅ Образы обновлены"
-
-# Инициализация нового проекта
-init-frontend:
-	@echo "🚀 Создание Next.js проекта..."
-	@npx create-next-app@latest frontend --typescript --tailwind --app --src-dir --import-alias "@/*"
-	@echo "✅ Frontend проект создан"
-
-init-backend:
-	@echo "🚀 Создание Backend проекта..."
-	@mkdir -p backend
-	@cd backend && npm init -y
-	@cd backend && npm install express prisma @prisma/client bcrypt jsonwebtoken cors helmet
-	@cd backend && npm install -D @types/node @types/express typescript ts-node nodemon
-	@echo "✅ Backend проект создан"
-
-# Инициализация Prisma
-init-prisma:
-	@echo "🗄️ Инициализация Prisma..."
-	@cd backend && npx prisma init
-	@echo "✅ Prisma инициализирован. Настройте schema.prisma"
-
-# Команды для миграции (будут использоваться позже)
-migration-help:
-	@echo "📊 Команды миграции (использовать после завершения разработки):"
-	@echo "  Смотрите scripts/migration/README.md для подробностей"
